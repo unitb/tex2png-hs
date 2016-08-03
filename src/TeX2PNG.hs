@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings
-, TemplateHaskell #-}
+, TemplateHaskell
+, DeriveGeneric #-}
 
 module TeX2PNG
     ( Args(..)
@@ -12,12 +13,14 @@ import           Control.Monad
 import           Control.Monad.Trans
 import           Control.Monad.Trans.Either
 import qualified Crypto.Hash.SHA256 as SHA256
-import           Data.ByteString.Base16 (encode)
+import qualified Data.ByteString.Base16 as BS16
 import           Data.ByteString.Char8 as BS
 import           Data.Monoid
+import           Data.Serialize
+import           Data.Serialize.Text ()
 import           Data.Text as T
-import           Data.Text.Encoding as T
 import           Data.Text.IO as T
+import           GHC.Generics
 import           Prelude as P
 import           System.Directory
 import           System.Environment
@@ -33,11 +36,15 @@ data Args = Args
   , _dir :: Maybe FilePath
   , _dpi :: Int
   , _full :: Bool
+  , _math :: Bool
   , _out :: Maybe FilePath
   , _page :: Int
   , _temp :: Maybe FilePath
   , _tightness :: Bool
   }
+  deriving (Generic)
+
+instance Serialize Args
 
 makeLenses ''Args
 
@@ -58,8 +65,14 @@ generate args =
         then
           "\\usepackage[paperwidth=\\maxdimen,paperheight=\\maxdimen]{geometry}"
         else ""
-      , header
-      , args^.content
+      , if (args^.math)
+        then "\\usepackage{amsmath}"
+             <> header
+             <> "\\begin{align*}"
+             <> args^.content
+             <> "\\end{align*}"
+        else header
+             <> args^.content
       , footer
       ]
 
@@ -138,8 +151,8 @@ outFile args = do
     Nothing -> do
       dir' <- outDir (args^.dir)
       return $
-        dir' </> ( flip mappend ".png" . BS.unpack . encode
-                  . SHA256.hash . T.encodeUtf8 $ args^.content)
+        dir' </> ( flip mappend ".png" . BS.unpack . BS16.encode
+                  . SHA256.hash . encode $ args)
 
 tmpDir :: Maybe FilePath -> IO FilePath
 tmpDir t = case t of

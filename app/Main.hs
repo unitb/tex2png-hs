@@ -55,6 +55,9 @@ args = Args
             , "in document tags. This options enables the user to provide a full"
             , "(La)TeX document with custom headers/footers."
             ]))
+  <*> switch
+  (short 'm'
+   <> help "Wrap the content in math mode (align* environment).")
   <*> optional
   (strOption
     (short 'o'

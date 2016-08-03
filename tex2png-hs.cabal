@@ -1,5 +1,5 @@
 name:                tex2png-hs
-version:             0.1.0
+version:             0.2.0
 synopsis:            Easily convert TeX and LaTeX to PNG images
 description:         A Haskell port of Xyne's @tex2png@ tool. It is a
                      wrapper around @latex@ and @dvipng@ and provides
@@ -30,6 +30,8 @@ library
                      , bytestring
                      , base16-bytestring
                      , either
+                     , cereal
+                     , cereal-text
   ghc-options:         -Wall -fwarn-tabs -fwarn-unused-imports
   default-language:    Haskell2010
 
