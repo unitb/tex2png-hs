@@ -39,6 +39,7 @@ data Args = Args
   , _math :: Bool
   , _out :: Maybe FilePath
   , _page :: Int
+  , _pkgs :: Maybe [Text]
   , _temp :: Maybe FilePath
   , _tightness :: Bool
   }
@@ -58,23 +59,28 @@ mkPNG = render =<< generate
 generate :: Args -> Text
 generate args =
   if (args^.full)
-    then args^.content
-    else T.intercalate "\n"
-      [ "\\documentclass{article}"
-      , if (args^.tightness)
-        then
-          "\\usepackage[paperwidth=\\maxdimen,paperheight=\\maxdimen]{geometry}"
-        else ""
-      , if (args^.math)
-        then "\\usepackage{amsmath}"
-             <> header
-             <> "\\begin{align*}"
-             <> args^.content
-             <> "\\end{align*}"
-        else header
-             <> args^.content
-      , footer
-      ]
+  then args^.content
+  else T.intercalate "\n"
+       [ "\\documentclass{article}"
+       , if (args^.tightness)
+         then
+           "\\usepackage[paperwidth=\\maxdimen,paperheight=\\maxdimen]{geometry}"
+         else ""
+       , case args^.pkgs of
+           Nothing -> ""
+           Just ps -> T.intercalate "\n" $ usepackage <$> ps
+       , header
+       , if (args^.math)
+         then T.intercalate "\n"
+              ["\\begin{align*}"
+              , args^.content
+              , "\\end{align*}"
+              ]
+         else args^.content
+       , footer
+       ]
+  where
+    usepackage t = "\\usepackage{" <> t <> "}"
 
 render :: Text -> Args -> IO (Either Text FilePath)
 render c args = runEitherT $ join $ do
@@ -168,7 +174,7 @@ header = T.intercalate "\n"
   [ "\\pagestyle{empty}"
   , "\\usepackage[utf8]{inputenc}"
   , "\\usepackage{lmodern}"
-  , "\\usepackage{amssymb}"
+  , "\\usepackage{amsmath,amssymb}"
   , "\\begin{document}"
   , "\\begin{samepage}"
   ]

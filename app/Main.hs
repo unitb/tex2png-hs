@@ -75,6 +75,17 @@ args = Args
    <> showDefault
    <> help "Page number to render.")
   <*> optional
+  (T.splitOn ","
+    <$> option text
+    (short 'P'
+     <> metavar "<packages>"
+     <> help (T.unpack . T.intercalate " " $
+              [ "Comma-separated list of packages to include. Note that the"
+              , "program doesn't check for existence of packages. Therefore,"
+              , "make sure that you've correctly installed the packages when"
+              , "using this option."
+              ])))
+  <*> optional
   (strOption
     (short 't'
      <> metavar "<path>"
