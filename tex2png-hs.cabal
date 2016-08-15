@@ -9,7 +9,7 @@ description:         A Haskell port of Xyne's @tex2png@ tool. It is a
 license:             MIT
 license-file:        LICENSE
 author:              Amin Bandali
-maintainer:          amin9@cse.yorku.ca
+maintainer:          amin9@my.yorku.ca
 copyright:           2016 Amin Bandali, Software Engineering Lab, York University
 category:            LaTeX
 build-type:          Simple
