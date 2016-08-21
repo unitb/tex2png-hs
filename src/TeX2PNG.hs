@@ -4,6 +4,7 @@
 
 module TeX2PNG
     ( Args(..)
+    , mkPDF
     , mkPNG )
 where
 
@@ -49,11 +50,13 @@ instance Serialize Args
 
 makeLenses ''Args
 
-latex, dvipng :: String
+pdflatex, latex, dvipng :: String
+pdflatex = "pdflatex"
 latex = "latex"
 dvipng = "dvipng"
 
-mkPNG :: Args -> IO (Either Text FilePath)
+mkPDF, mkPNG :: Args -> IO (Either Text FilePath)
+mkPDF = renderPDF =<< generate
 mkPNG = render =<< generate
 
 generate :: Args -> Text
@@ -91,7 +94,7 @@ render c args = runEitherT $ join $ do
       (dExit, dOut, dErr) <- bimapEitherT errDvipng id
                              (runDvipng args)
       case dExit of
-        ExitSuccess -> return $ lift $ outFile args
+        ExitSuccess -> return $ lift $ outFile args (Just "png")
         _ -> return . left . T.intercalate "\n" $ [dOut, dErr]
     _ -> return . left . T.intercalate "\n" $ [lOut, lErr]
 
@@ -105,6 +108,22 @@ render c args = runEitherT $ join $ do
       [ "The `" <> (T.pack dvipng) <> "` command was not found."
       , "If you already have LaTeX installed, you may have to "
       <>"install dvipng manually from CTAN."
+      ]
+
+renderPDF :: Text -> Args -> IO (Either Text FilePath)
+renderPDF c args = runEitherT $ join $ do
+  (plExit, plOut, plErr) <- bimapEitherT errPdfLatex id
+                         (runPdfLatex args c)
+  case plExit of
+    ExitSuccess -> do
+      return $ lift $ outFile args (Just "pdf")
+    _ -> return . left . T.intercalate "\n" $ [plOut, plErr]
+
+  where
+    errPdfLatex :: () -> Text
+    errPdfLatex _ = T.intercalate "\n" $
+      [ "The `" <> (T.pack pdflatex) <> "` command was not found."
+      , "Make sure you have a working LaTeX installation."
       ]
 
 runLatex :: Args -> Text -> EitherT () IO (ExitCode, Text, Text)
@@ -124,9 +143,27 @@ runLatex args content' = do
     )
     mempty
 
+runPdfLatex :: Args -> Text -> EitherT () IO (ExitCode, Text, Text)
+runPdfLatex args content' = do
+  o <- lift $ outFile args (Just "tex")
+  t <- lift $ tmpDir (args^.temp)
+  e <- lift $ getEnvironment
+  let contentFileName = t </> takeFileName o
+  lift $ T.writeFile (contentFileName) content'
+  EitherT $ tryJust (guard . isDoesNotExistError) $
+    readCreateProcessWithExitCode
+    ((proc pdflatex
+       [ "-halt-on-error"
+       , "-output-directory=" ++ takeDirectory o
+       , contentFileName
+       ])
+     {env = Just $ ("LC_ALL","C"):e}
+    )
+    mempty
+
 runDvipng :: Args -> EitherT () IO (ExitCode, Text, Text)
 runDvipng args = do
-  o <- lift $ outFile args
+  o <- lift $ outFile args (Just "png")
   tmp <- liftIO $ tmpDir (args^.temp)
   let t = args^.tightness
   EitherT $ tryJust (guard . isDoesNotExistError) $
@@ -150,15 +187,15 @@ outDir d = case d of
   Just path -> return path
   Nothing -> getCurrentDirectory
 
-outFile :: Args -> IO FilePath
-outFile args = do
+outFile :: Args -> Maybe String -> IO FilePath
+outFile args ext = do
   case args^.out of
-    Just path -> return path
+    Just path -> return $ maybe path ((-<.>) path) ext
     Nothing -> do
       dir' <- outDir (args^.dir)
-      return $
-        dir' </> ( flip mappend ".png" . BS.unpack . BS16.encode
-                  . SHA256.hash . encode $ args)
+      let name = BS.unpack . BS16.encode . SHA256.hash . encode $ args
+          file = maybe (dir' </> name) ((-<.>) (dir' </> name)) ext
+      return file
 
 tmpDir :: Maybe FilePath -> IO FilePath
 tmpDir t = case t of
