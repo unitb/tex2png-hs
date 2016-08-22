@@ -128,9 +128,10 @@ renderPDF c args = runEitherT $ join $ do
 
 runLatex :: Args -> Text -> EitherT () IO (ExitCode, Text, Text)
 runLatex args content' = do
+  f <- lift $ outFile args "tex"
   t <- lift $ tmpDir (args^.temp)
   e <- lift $ getEnvironment
-  let contentFileName = t </> "content.tex"
+  let contentFileName = t </> takeFileName f
   lift $ T.writeFile (contentFileName) content'
   EitherT $ tryJust (guard . isDoesNotExistError) $
     readCreateProcessWithExitCode
@@ -163,6 +164,7 @@ runPdfLatex args content' = do
 
 runDvipng :: Args -> EitherT () IO (ExitCode, Text, Text)
 runDvipng args = do
+  f <- lift $ outFile args "dvi"
   o <- lift $ outFile args "png"
   tmp <- liftIO $ tmpDir (args^.temp)
   let t = args^.tightness
@@ -177,7 +179,7 @@ runDvipng args = do
       , [ "-bg", T.unpack (args^.bg)
         , "--png", "-z 9"
         , "-o", o
-        , tmp </> "content.dvi"
+        , tmp </> takeFileName f
         ]
       ])
     mempty
