@@ -94,7 +94,7 @@ render c args = runEitherT $ join $ do
       (dExit, dOut, dErr) <- bimapEitherT errDvipng id
                              (runDvipng args)
       case dExit of
-        ExitSuccess -> return $ lift $ outFile args (Just "png")
+        ExitSuccess -> return $ lift $ outFile args "png"
         _ -> return . left . T.intercalate "\n" $ [dOut, dErr]
     _ -> return . left . T.intercalate "\n" $ [lOut, lErr]
 
@@ -116,7 +116,7 @@ renderPDF c args = runEitherT $ join $ do
                          (runPdfLatex args c)
   case plExit of
     ExitSuccess -> do
-      return $ lift $ outFile args (Just "pdf")
+      return $ lift $ outFile args "pdf"
     _ -> return . left . T.intercalate "\n" $ [plOut, plErr]
 
   where
@@ -145,7 +145,7 @@ runLatex args content' = do
 
 runPdfLatex :: Args -> Text -> EitherT () IO (ExitCode, Text, Text)
 runPdfLatex args content' = do
-  o <- lift $ outFile args (Just "tex")
+  o <- lift $ outFile args "tex"
   t <- lift $ tmpDir (args^.temp)
   e <- lift $ getEnvironment
   let contentFileName = t </> takeFileName o
@@ -163,7 +163,7 @@ runPdfLatex args content' = do
 
 runDvipng :: Args -> EitherT () IO (ExitCode, Text, Text)
 runDvipng args = do
-  o <- lift $ outFile args (Just "png")
+  o <- lift $ outFile args "png"
   tmp <- liftIO $ tmpDir (args^.temp)
   let t = args^.tightness
   EitherT $ tryJust (guard . isDoesNotExistError) $
@@ -187,14 +187,14 @@ outDir d = case d of
   Just path -> return path
   Nothing -> getCurrentDirectory
 
-outFile :: Args -> Maybe String -> IO FilePath
+outFile :: Args -> String -> IO FilePath
 outFile args ext = do
   case args^.out of
-    Just path -> return $ maybe path ((-<.>) path) ext
+    Just path -> return $ path -<.> ext
     Nothing -> do
       dir' <- outDir (args^.dir)
       let name = BS.unpack . BS16.encode . SHA256.hash . encode $ args
-          file = maybe (dir' </> name) ((-<.>) (dir' </> name)) ext
+          file = dir' </> name -<.> ext
       return file
 
 tmpDir :: Maybe FilePath -> IO FilePath
