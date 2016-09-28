@@ -45,7 +45,7 @@ executable tex2png-hs
   build-depends:       base
                      , tex2png-hs
                      , text
-                     , optparse-applicative
+                     , optparse-applicative <= 0.12.1.0
                      , optparse-text
                      , gitrev
                      , template-haskell
