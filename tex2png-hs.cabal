@@ -39,6 +39,7 @@ executable tex2png-hs
   hs-source-dirs:      app
   main-is:             Main.hs
   other-modules:       TH
+                       Paths_tex2png_hs
   ghc-options:         -Wall -O2 -fwarn-tabs -fwarn-unused-imports
                        -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
