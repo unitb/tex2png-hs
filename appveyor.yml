@@ -40,6 +40,10 @@ build_script:
 - stack setup %lts% > nul
 - cmd: echo "" | stack --no-terminal build %lts% --test --no-run-tests
 
+skip_commits:
+  files:
+    - .travis.yml
+
 test_script:
 # The ugly echo "" hack is to avoid complaints about 0 being an invalid file
 # descriptor
