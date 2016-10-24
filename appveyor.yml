@@ -24,9 +24,9 @@ environment:
   global:
     STACK_ROOT: "c:\\sr"
   matrix: 
-    - lts: --resolver lts-3
+    # - lts: --resolver lts-3
     # - lts: --resolver lts-6
-    - lts: --resolver lts-7
+    # - lts: --resolver lts-7
     - lts: ""
 
 platform:
