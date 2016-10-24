@@ -20,8 +20,8 @@ cache:
   - $HOME/.ghc
   - $HOME/.cabal
   - $HOME/.stack
-  - $HOME/tex2png-hs/tex2png-hs/.stack-work/install
-  - $HOME/tex2png-hs/tex2png-hs/.stack-work/downloaded
+  - $HOME/literate-unitb/tex2png-hs/.stack-work/install
+  - $HOME/literate-unitb/tex2png-hs/.stack-work/downloaded
 
 # The different configurations we want to test. We have BUILD=cabal which uses
 # cabal-install, and BUILD=stack which uses Stack. More documentation on each
