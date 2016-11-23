@@ -63,4 +63,4 @@ test-suite tex2png-hs-test
 
 source-repository head
   type:     git
-  location: https://github.com/literate-unitb/tex2png-hs
+  location: https://github.com/unitb/tex2png-hs
