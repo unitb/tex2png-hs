@@ -25,10 +25,10 @@ contents = option text
 args :: Parser (Args, T.Text)
 args = fmap swap . liftA2 (,) contents $
       Args
-  <$> option text
-  (short 'b'
+  <$> option auto
+  (   short 'b'
    <> metavar "<color spec>"
-   <> value "transparent"
+   <> value SimplyTransparent
    <> showDefault
    <> help (T.unpack . T.intercalate " " $
             [ "The background color to pass to dvipng's \"-bg\" option."
@@ -38,14 +38,14 @@ args = fmap swap . liftA2 (,) contents $
             ]))
   <*> optional
   (strOption
-    (short 'd'
+    (   short 'd'
      <> metavar "<path>"
      <> help (T.unpack . T.intercalate " " $
               [ "The output directory. If set, then the image will be saved"
               , "there, otherwise it will be saved in the current directory."
               ])))
   <*> option auto
-  (short 'D'
+  (   short 'D'
    <> metavar "<int>"
    <> value 100
    <> showDefault
@@ -54,7 +54,7 @@ args = fmap swap . liftA2 (,) contents $
             , "Increase this to increase font size."
             ]))
   <*> switch
-  (short 'f'
+  (   short 'f'
    <> help (T.unpack . T.intercalate " " $
             [ "Specify the full input document. By default, a pre-defined"
             , "header is prepended to the input content, which is then wrapped"
@@ -62,11 +62,11 @@ args = fmap swap . liftA2 (,) contents $
             , "(La)TeX document with custom headers/footers."
             ]))
   <*> switch
-  (short 'm'
+  (   short 'm'
    <> help "Wrap the content in math mode (align* environment).")
   <*> optional
   (strOption
-    (short 'o'
+    (   short 'o'
      <> metavar "<path>"
      <> help (T.unpack . T.intercalate " " $
               [ "The output image path. If it is set, then it is the full path"
@@ -75,32 +75,31 @@ args = fmap swap . liftA2 (,) contents $
               , "extension."
               ])))
   <*> option auto
-  (short 'p'
+  (   short 'p'
    <> metavar "<int>"
    <> value 1
    <> showDefault
    <> help "Page number to render.")
-  <*> optional
-  (T.splitOn ","
-    <$> option text
-    (short 'P'
+  <*> option (T.splitOn "," <$> text)
+    (   short 'P'
      <> metavar "<packages>"
+     <> value []
      <> help (T.unpack . T.intercalate " " $
               [ "Comma-separated list of packages to include. Note that the"
               , "program doesn't check for existence of packages. Therefore,"
               , "make sure that you've correctly installed the packages when"
               , "using this option."
-              ])))
+              ]))
   <*> optional
   (strOption
-    (short 't'
+    (   short 't'
      <> metavar "<path>"
      <> help (T.unpack . T.intercalate " " $
               [ "The temporary working directory. A random directory is created"
               , "in $TMPDIR by default."
               ])))
   <*> switch
-  (short 'T'
+  (   short 'T'
    <> help "Crop whitespace around the content (dvipng -T tight).")
 
 main :: IO ()

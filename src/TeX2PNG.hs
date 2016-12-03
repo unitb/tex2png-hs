@@ -1,38 +1,56 @@
 {-# LANGUAGE OverloadedStrings
-, TemplateHaskell
-, DeriveGeneric #-}
+      , TemplateHaskell
+      , QuasiQuotes
+      , DeriveGeneric #-}
 
 module TeX2PNG
     ( Args(..)
+    , Background (..)
+    , OptArgs
+    , (.=)
     , mkPDF
-    , mkPNG )
+    , mkPNG 
+    , bg, dir, dpi 
+    , full, math, out
+    , page, pkgs, temp
+    , tightness )
 where
 
-import           Control.Exception
-import           Control.Lens (makeLenses, (^.))
-import           Control.Monad
-import           Control.Monad.State
-import           Control.Monad.Trans.Either
+import Control.Exception
+import Control.Lens (makeLenses, (^.), (.=))
+import Control.Monad
+import Control.Monad.State
+import Control.Monad.Trans.Either
+
 import qualified Crypto.Hash.SHA256 as SHA256
+
 import qualified Data.ByteString.Base16 as BS16
 import           Data.ByteString.Char8 as BS
+import           Data.Maybe
 import           Data.Monoid
-import           Data.Serialize
+import           Data.Serialize hiding (expect)
 import           Data.Serialize.Text ()
 import           Data.Text as T
 import           Data.Text.IO as T
-import           GHC.Generics
-import           Prelude as P
-import           System.Directory
-import           System.Environment
-import           System.Exit
-import           System.FilePath
-import           System.IO.Error
-import           System.Process hiding (readCreateProcessWithExitCode)
-import           System.Process.Text
+
+import GHC.Generics
+import Prelude as P
+
+import System.Directory
+import System.Environment
+import System.Exit
+import System.FilePath
+import System.IO.Error
+import System.Process hiding (readCreateProcessWithExitCode)
+import System.Process.Text
+
+import Text.ParserCombinators.ReadP
+import Text.Printf.TH
+import Text.Read     hiding (lift,choice)
+import Text.Read.Lex 
 
 data Args = Args
-  { _bg :: Text
+  { _bg :: Background
   -- , _content :: Text
   , _dir :: Maybe FilePath
   , _dpi :: Int
@@ -40,15 +58,33 @@ data Args = Args
   , _math :: Bool
   , _out :: Maybe FilePath
   , _page :: Int
-  , _pkgs :: Maybe [Text]
+  , _pkgs :: [Text]
   , _temp :: Maybe FilePath
   , _tightness :: Bool
   }
-  deriving (Generic)
+  deriving (Eq,Show,Generic)
 
 instance Serialize Args
+instance Serialize Background
+
+data Background = 
+      AlphaTransparent 
+      | SimplyTransparent
+      | RGB Float Float Float
+  deriving (Eq,Show,Generic)
 
 makeLenses ''Args
+
+instance Read Background where
+  readsPrec _ = readP_to_S $ choice 
+          [ SimplyTransparent <$ expect (Ident "transparent")
+          , AlphaTransparent <$ expect (Ident "Transparent")
+          , expect (Ident "rgb") *> (RGB <$> readDecP <*> readDecP <*> readDecP) ]
+
+backgroundArg :: Background -> String
+backgroundArg SimplyTransparent = "transparent"
+backgroundArg AlphaTransparent = "Transparent"
+backgroundArg (RGB r g b) = [s|rgb %f %f %f|] r g b
 
 pdflatex, latex, dvipng :: String
 pdflatex = "pdflatex"
@@ -63,14 +99,14 @@ mkPNG args = render args . generate args
 
 runArgs :: OptArgs k -> Args
 runArgs cmd = execState cmd $ Args
-    { _bg = "transparent" 
+    { _bg = SimplyTransparent 
     , _dir  = Nothing 
     , _dpi  = 100
     , _full = False
     , _math = False
     , _out  = Nothing
     , _page = 1
-    , _pkgs = Nothing
+    , _pkgs = []
     , _temp = Nothing
     , _tightness = False }
 
@@ -84,9 +120,7 @@ generate opts content =
          then
            "\\usepackage[paperwidth=\\maxdimen,paperheight=\\maxdimen]{geometry}"
          else ""
-       , case args^.pkgs of
-           Nothing -> ""
-           Just ps -> T.intercalate "\n" $ usepackage <$> ps
+       , T.intercalate "\n" $ usepackage <$> args^.pkgs
        , header
        , if (args^.math)
          then T.intercalate "\n"
@@ -194,7 +228,7 @@ runDvipng args = do
         , "-p", show (args^.page)
         ]
       , if t then ["-T", "tight"] else []
-      , [ "-bg", T.unpack (args^.bg)
+      , [ "-bg", backgroundArg (args^.bg)
         , "--png", "-z 9"
         , "-o", o
         , tmp </> takeFileName f
