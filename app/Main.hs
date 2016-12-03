@@ -2,8 +2,10 @@
 
 module Main where
 
+import           Control.Monad.State
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
+import           Data.Tuple
 import           Options.Applicative
 import           Options.Applicative.Text
 import           Paths_tex2png_hs (version)
@@ -13,8 +15,15 @@ import           Text.Printf
 import           TH
 import           TeX2PNG
 
-args :: Parser Args
-args = Args
+contents :: Parser T.Text
+contents = option text
+          (short 'c'
+           <> metavar "<string>"
+           <> help "The (La)TeX string to be rendered.")
+
+args :: Parser (Args, T.Text)
+args = fmap swap . liftA2 (,) contents $
+      Args
   <$> option text
   (short 'b'
    <> metavar "<color spec>"
@@ -26,10 +35,6 @@ args = Args
             , "\"rgb 0.2 0.2 0.2\". \"Transparent\" and \"transparent\" are"
             , "also accepted. See the dvipng help message for more details."
             ]))
-  <*> option text
-  (short 'c'
-   <> metavar "<string>"
-   <> help "The (La)TeX string to be rendered.")
   <*> optional
   (strOption
     (short 'd'
@@ -109,7 +114,7 @@ main = do
                        <> help "Show version"
                        <> hidden)
       ver = $(simpleVersion version)
-  res <- execParser opts >>= mkPNG
+  res <- execParser opts >>= uncurry (\arg -> mkPNG $ put arg)
   either
     T.putStrLn                                   -- display the erro
     (\path -> putStrLn $ concat ["file=", path]) -- display the file path

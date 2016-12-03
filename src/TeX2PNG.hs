@@ -11,7 +11,7 @@ where
 import           Control.Exception
 import           Control.Lens (makeLenses, (^.))
 import           Control.Monad
-import           Control.Monad.Trans
+import           Control.Monad.State
 import           Control.Monad.Trans.Either
 import qualified Crypto.Hash.SHA256 as SHA256
 import qualified Data.ByteString.Base16 as BS16
@@ -33,7 +33,7 @@ import           System.Process.Text
 
 data Args = Args
   { _bg :: Text
-  , _content :: Text
+  -- , _content :: Text
   , _dir :: Maybe FilePath
   , _dpi :: Int
   , _full :: Bool
@@ -55,14 +55,29 @@ pdflatex = "pdflatex"
 latex = "latex"
 dvipng = "dvipng"
 
-mkPDF, mkPNG :: Args -> IO (Either Text FilePath)
-mkPDF = renderPDF =<< generate
-mkPNG = render =<< generate
+type OptArgs = State Args
 
-generate :: Args -> Text
-generate args =
+mkPDF, mkPNG :: OptArgs k -> Text -> IO (Either Text FilePath)
+mkPDF args = renderPDF args . generate args
+mkPNG args = render args . generate args
+
+runArgs :: OptArgs k -> Args
+runArgs cmd = execState cmd $ Args
+    { _bg = "transparent" 
+    , _dir  = Nothing 
+    , _dpi  = 100
+    , _full = False
+    , _math = False
+    , _out  = Nothing
+    , _page = 1
+    , _pkgs = Nothing
+    , _temp = Nothing
+    , _tightness = False }
+
+generate :: OptArgs k -> Text -> Text
+generate opts content =
   if (args^.full)
-  then args^.content
+  then content
   else T.intercalate "\n"
        [ "\\documentclass{article}"
        , if (args^.tightness)
@@ -76,17 +91,19 @@ generate args =
        , if (args^.math)
          then T.intercalate "\n"
               ["\\begin{align*}"
-              , args^.content
+              , content
               , "\\end{align*}"
               ]
-         else args^.content
+         else content
        , footer
        ]
   where
     usepackage t = "\\usepackage{" <> t <> "}"
+    args = runArgs opts
 
-render :: Text -> Args -> IO (Either Text FilePath)
-render c args = runEitherT $ join $ do
+render :: OptArgs k -> Text -> IO (Either Text FilePath)
+render opts c = runEitherT $ join $ do
+  let args = runArgs opts
   (lExit, lOut, lErr) <- bimapEitherT errLatex id
                          (runLatex args c)
   case lExit of
@@ -110,8 +127,9 @@ render c args = runEitherT $ join $ do
       <>"install dvipng manually from CTAN."
       ]
 
-renderPDF :: Text -> Args -> IO (Either Text FilePath)
-renderPDF c args = runEitherT $ join $ do
+renderPDF :: OptArgs k -> Text -> IO (Either Text FilePath)
+renderPDF opts c = runEitherT $ join $ do
+  let args = runArgs opts
   (plExit, plOut, plErr) <- bimapEitherT errPdfLatex id
                          (runPdfLatex args c)
   case plExit of

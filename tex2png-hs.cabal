@@ -34,6 +34,7 @@ library
                      , cereal-text
   ghc-options:         -Wall -fwarn-tabs -fwarn-unused-imports
   default-language:    Haskell2010
+  default-extensions: RankNTypes
 
 executable tex2png-hs
   hs-source-dirs:      app
@@ -45,9 +46,10 @@ executable tex2png-hs
   build-depends:       base
                      , tex2png-hs
                      , text
-                     , optparse-applicative <= 0.12.1.0
+                     , optparse-applicative < 0.14
                      , optparse-text
                      , gitrev
+                     , mtl
                      , template-haskell
   default-extensions:  OverloadedStrings
   default-language:    Haskell2010
