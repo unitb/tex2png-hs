@@ -3,6 +3,7 @@
 module Main where
 
 import           Control.Monad.State
+import           Data.Monoid ((<>))
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import           Data.Tuple
