@@ -143,9 +143,9 @@ render opts c = runEitherT $ join $ do
   case lExit of
     ExitSuccess -> do
       (dExit, dOut, dErr) <- bimapEitherT errDvipng id
-                             (runDvipng args)
+                             (runDvipng args c)
       case dExit of
-        ExitSuccess -> return $ lift $ outFile args "png"
+        ExitSuccess -> return $ lift $ outFile args c "png"
         _ -> return . left . T.intercalate "\n" $ [dOut, dErr]
     _ -> return . left . T.intercalate "\n" $ [lOut, lErr]
 
@@ -168,7 +168,7 @@ renderPDF opts c = runEitherT $ join $ do
                          (runPdfLatex args c)
   case plExit of
     ExitSuccess -> do
-      return $ lift $ outFile args "pdf"
+      return $ lift $ outFile args c "pdf"
     _ -> return . left . T.intercalate "\n" $ [plOut, plErr]
 
   where
@@ -180,7 +180,7 @@ renderPDF opts c = runEitherT $ join $ do
 
 runLatex :: Args -> Text -> EitherT () IO (ExitCode, Text, Text)
 runLatex args content' = do
-  f <- lift $ outFile args "tex"
+  f <- lift $ outFile args content' "tex"
   t <- lift $ tmpDir (args^.temp)
   e <- lift $ getEnvironment
   let contentFileName = t </> takeFileName f
@@ -198,7 +198,7 @@ runLatex args content' = do
 
 runPdfLatex :: Args -> Text -> EitherT () IO (ExitCode, Text, Text)
 runPdfLatex args content' = do
-  o <- lift $ outFile args "tex"
+  o <- lift $ outFile args content' "tex"
   t <- lift $ tmpDir (args^.temp)
   e <- lift $ getEnvironment
   let contentFileName = t </> takeFileName o
@@ -214,10 +214,10 @@ runPdfLatex args content' = do
     )
     mempty
 
-runDvipng :: Args -> EitherT () IO (ExitCode, Text, Text)
-runDvipng args = do
-  f <- lift $ outFile args "dvi"
-  o <- lift $ outFile args "png"
+runDvipng :: Args -> Text -> EitherT () IO (ExitCode, Text, Text)
+runDvipng args c = do
+  f <- lift $ outFile args c "dvi"
+  o <- lift $ outFile args c "png"
   tmp <- liftIO $ tmpDir (args^.temp)
   let t = args^.tightness
   EitherT $ tryJust (guard . isDoesNotExistError) $
@@ -241,13 +241,13 @@ outDir d = case d of
   Just path -> return path
   Nothing -> getCurrentDirectory
 
-outFile :: Args -> String -> IO FilePath
-outFile args ext = do
+outFile :: Args -> Text -> String -> IO FilePath
+outFile args c ext = do
   case args^.out of
     Just path -> return $ path -<.> ext
     Nothing -> do
       dir' <- outDir (args^.dir)
-      let name = BS.unpack . BS16.encode . SHA256.hash . encode $ args
+      let name = BS.unpack . BS16.encode . SHA256.hash $ encode args <> encode c
           file = dir' </> name -<.> ext
       return file
 
