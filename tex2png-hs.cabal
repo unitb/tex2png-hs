@@ -1,69 +1,81 @@
+-- This file has been generated from package.yaml by hpack version 0.17.0.
+--
+-- see: https://github.com/sol/hpack
+
 name:                tex2png-hs
 version:             0.4.2
 synopsis:            Easily convert TeX and LaTeX to PNG images
-description:         A Haskell port of Xyne's @tex2png@ tool. It is a
-                     wrapper around @latex@ and @dvipng@ and provides
-                     several options for modifying its behaviour, such
-                     as cropping the whitespace around the content,
-                     specifying the DPI, or inputting a full document.
+description:         "A Haskell port of Xyne's @tex2png@ tool. It is a wrapper around @latex@ and @dvipng@ and provides several options for modifying its behaviour, such as cropping the whitespace around the content, specifying the DPI, or inputting a full document."
 license:             MIT
 license-file:        LICENSE
 author:              Amin Bandali
 maintainer:          amin@aminb.org
-copyright:           2016 Amin Bandali, Software Engineering Lab, York University
+copyright:           2016-2017 Amin Bandali, Software Engineering Lab, York University
 category:            LaTeX
+homepage:            https://github.com/unitb/tex2png-hs#readme
+bug-reports:         https://github.com/unitb/tex2png-hs/issues
 build-type:          Simple
-cabal-version:       >=1.10
+cabal-version:       >= 1.10
+
+source-repository head
+  type: git
+  location: https://github.com/unitb/tex2png-hs
 
 library
-  hs-source-dirs:      src
-  exposed-modules:     TeX2PNG
-  build-depends:       base >= 4.7 && < 5
-                     , text
-                     , filepath
-                     , lens
-                     , directory
-                     , process
-                     , process-extras
-                     , mtl
-                     , cryptohash-sha256
-                     , bytestring
-                     , base16-bytestring
-                     , either
-                     , cereal
-                     , cereal-text
-                     , th-printf
-  ghc-options:         -Wall -fwarn-tabs -fwarn-unused-imports
-  default-language:    Haskell2010
+  hs-source-dirs:
+      src
+  exposed-modules:
+      TeX2PNG
+  other-modules:
+      Paths_tex2png_hs
+  build-depends:
+      base >=4.7 && <5
+    , text
+    , mtl
+    , filepath
+    , lens
+    , directory
+    , process
+    , process-extras
+    , cryptohash-sha256
+    , bytestring
+    , base16-bytestring
+    , either
+    , cereal
+    , cereal-text
+    , th-printf
+  ghc-options: -Wall -fwarn-tabs -fwarn-unused-imports
+  default-language: Haskell2010
   default-extensions: RankNTypes
 
 executable tex2png-hs
-  hs-source-dirs:      app
-  main-is:             Main.hs
-  other-modules:       TH
-                       Paths_tex2png_hs
-  ghc-options:         -Wall -fwarn-tabs -fwarn-unused-imports
-                       -threaded -rtsopts -with-rtsopts=-N
-  build-depends:       base
-                     , tex2png-hs
-                     , text
-                     , optparse-applicative < 0.14
-                     , optparse-text
-                     , gitrev
-                     , mtl
-                     , template-haskell
-  default-extensions:  OverloadedStrings
-  default-language:    Haskell2010
+  hs-source-dirs:
+      app
+  main-is: Main.hs
+  other-modules:
+      TH
+  ghc-options: -Wall -fwarn-tabs -fwarn-unused-imports -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , text
+    , mtl
+    , tex2png-hs
+    , optparse-applicative <0.14
+    , optparse-text
+    , gitrev
+    , template-haskell
+  default-extensions: OverloadedStrings
+  default-language: Haskell2010
 
 test-suite tex2png-hs-test
-  type:                exitcode-stdio-1.0
-  hs-source-dirs:      test
-  main-is:             Spec.hs
-  build-depends:       base
-                     , tex2png-hs
-  ghc-options:         -Wall -fwarn-tabs -threaded -rtsopts -with-rtsopts=-N
-  default-language:    Haskell2010
-
-source-repository head
-  type:     git
-  location: https://github.com/unitb/tex2png-hs
+  type: exitcode-stdio-1.0
+  hs-source-dirs:
+      test
+  main-is: Spec.hs
+  build-depends:
+      base >=4.7 && <5
+    , text
+    , mtl
+    , tex2png-hs
+  ghc-options: -Wall -fwarn-tabs -threaded -rtsopts -with-rtsopts=-N
+  default-language: Haskell2010

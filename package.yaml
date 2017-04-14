@@ -1,0 +1,72 @@
+name: tex2png-hs
+version: 0.4.2
+synopsis: Easily convert TeX and LaTeX to PNG images
+description: >
+  "A Haskell port of Xyne's @tex2png@ tool. It is a
+  wrapper around @latex@ and @dvipng@ and provides
+  several options for modifying its behaviour, such
+  as cropping the whitespace around the content,
+  specifying the DPI, or inputting a full document."
+category: LaTeX
+author: Amin Bandali
+maintainer: amin@aminb.org
+copyright: 2016-2017 Amin Bandali, Software Engineering Lab, York University
+license: MIT
+github: unitb/tex2png-hs
+
+ghc-options:
+  - -Wall
+  - -fwarn-tabs
+
+dependencies:
+  - base >=4.7 && <5
+  - text
+  - mtl
+
+library:
+  source-dirs: src
+  default-extensions: RankNTypes
+  ghc-options: -fwarn-unused-imports
+  exposed-modules:
+    - TeX2PNG
+  dependencies:
+    - filepath
+    - lens
+    - directory
+    - process
+    - process-extras
+    - cryptohash-sha256
+    - bytestring
+    - base16-bytestring
+    - either
+    - cereal
+    - cereal-text
+    - th-printf
+
+executables:
+  tex2png-hs:
+    main: Main.hs
+    source-dirs: app
+    default-extensions: OverloadedStrings
+    ghc-options:
+      - -fwarn-unused-imports
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
+    dependencies:
+      - tex2png-hs
+      - optparse-applicative <0.14
+      - optparse-text
+      - gitrev
+      - template-haskell
+
+tests:
+  tex2png-hs-test:
+    main: Spec.hs
+    source-dirs: test
+    ghc-options:
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
+    dependencies:
+      - tex2png-hs
